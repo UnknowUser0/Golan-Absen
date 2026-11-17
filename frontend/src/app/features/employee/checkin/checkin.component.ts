@@ -114,6 +114,8 @@ export class CheckinComponent implements OnInit, AfterViewInit, OnDestroy {
   selectedFieldLocationId: number | null = null;
   locationSelectionLoading = true;
   locationSelectionError = '';
+  private alternativeLocationLoadFailed = false;
+  alternativeLocationRestoreError = '';
   openTipeKerja = false;
   
   stream!: MediaStream;
@@ -122,6 +124,8 @@ export class CheckinComponent implements OnInit, AfterViewInit, OnDestroy {
   capturedBlob: Blob | null = null;
 
   todayRecord: any = null; // Store today's attendance record
+  todayAlternativeLocationId: number | null = null;
+  private todayAttendanceLoaded = false;
   hasCheckedIn: boolean = false;
   hasCheckedOut: boolean = false;
   hasLeaveToday: boolean = false;
@@ -199,6 +203,8 @@ export class CheckinComponent implements OnInit, AfterViewInit, OnDestroy {
       next: (records) => {
         const todayStr = this.getAttendanceDateKey(new Date());
         const todayRecord = records.find(r => r.Tanggal.startsWith(todayStr));
+        this.todayAttendanceLoaded = true;
+        this.todayAlternativeLocationId = this.normalizeLocationId(todayRecord?.alternative_location_id);
         if (todayRecord) {
           this.todayRecord = todayRecord;
           this.hasCheckedIn = todayRecord.JamMasuk != null;
@@ -207,6 +213,9 @@ export class CheckinComponent implements OnInit, AfterViewInit, OnDestroy {
           this.leaveStatus = this.hasLeaveToday ? todayRecord.Status : '';
           if (this.hasCheckedIn && !this.hasCheckedOut) {
             this.tipeKerja = todayRecord.TipeKerja;
+            // Location data may finish loading before or after attendance history.
+            // Re-sync here so a late history response wins over any default choice.
+            this.syncSelectedLocation();
             this.updateOfficeGeofence();
             this.updateMapGeofences();
             this.checkRadius();
@@ -466,10 +475,12 @@ export class CheckinComponent implements OnInit, AfterViewInit, OnDestroy {
       next: response => {
         const rows = Array.isArray(response) ? response : response?.data;
         this.alternativeLocations = (Array.isArray(rows) ? rows : []).filter(location => this.isApprovedActiveAlternative(location));
+        this.alternativeLocationLoadFailed = false;
         complete();
       },
       error: error => {
         this.alternativeLocations = [];
+        this.alternativeLocationLoadFailed = true;
         this.locationSelectionError = this.apiLocationError(error, 'Lokasi alternatif tidak dapat dimuat.');
         complete();
       }
@@ -520,6 +531,11 @@ export class CheckinComponent implements OnInit, AfterViewInit, OnDestroy {
     return Number(location?.id ?? location?.ID ?? 0);
   }
 
+  private normalizeLocationId(value: unknown): number | null {
+    const id = Number(value);
+    return Number.isInteger(id) && id > 0 ? id : null;
+  }
+
   private isApprovedActiveAlternative(location: any): boolean {
     const approval = String(location?.status ?? location?.status_approval ?? location?.StatusApproval ?? '').toLowerCase();
     const active = String(location?.status_aktif ?? location?.StatusAktif ?? '').toLowerCase();
@@ -542,17 +558,49 @@ export class CheckinComponent implements OnInit, AfterViewInit, OnDestroy {
     const selected = this.workTypes.find(workType => workType.Nama === this.tipeKerja);
     const canonical = this.canonicalType(selected);
     if (canonical === 'alternative_location') {
-      if (!this.alternativeLocations.some(location => this.locationId(location) === this.selectedAlternativeLocationId)) {
+      const recordedAlternative = this.hasCheckedIn
+        && this.todayAttendanceLoaded
+        && this.canonicalType({ Nama: this.todayRecord?.TipeKerja }) === 'alternative_location';
+
+      if (recordedAlternative) {
+        // Do not pick a different location while the approved/active list is
+        // still loading. The attendance record is the source of truth.
+        if (this.locationSelectionLoading) {
+          this.selectedAlternativeLocationId = null;
+          this.alternativeLocationRestoreError = '';
+        } else {
+          const storedId = this.todayAlternativeLocationId;
+          const storedLocation = this.alternativeLocationLoadFailed || storedId == null
+            ? null
+            : this.alternativeLocations.find(location => this.locationId(location) === storedId);
+
+          if (this.alternativeLocationLoadFailed) {
+            this.selectedAlternativeLocationId = null;
+            this.alternativeLocationRestoreError = '';
+          } else if (storedLocation) {
+            this.selectedAlternativeLocationId = storedId;
+            this.alternativeLocationRestoreError = '';
+          } else {
+            this.selectedAlternativeLocationId = null;
+            this.alternativeLocationRestoreError = storedId == null
+              ? 'Lokasi alternatif pada absensi hari ini tidak memiliki ID tersimpan.'
+              : `Lokasi alternatif yang digunakan saat check-in (ID ${storedId}) tidak ditemukan dalam daftar approved dan aktif.`;
+          }
+        }
+      } else if (!this.alternativeLocations.some(location => this.locationId(location) === this.selectedAlternativeLocationId)) {
         this.selectedAlternativeLocationId = this.locationId(this.alternativeLocations[0]) || null;
+        this.alternativeLocationRestoreError = '';
       }
       this.selectedFieldLocationId = null;
     } else if (canonical === 'field_location') {
       const configuredID = Number(selected?.field_location_id ?? selected?.FieldLocationID ?? 0);
       this.selectedFieldLocationId = this.fieldLocations.some(location => this.locationId(location) === configuredID) ? configuredID : null;
       this.selectedAlternativeLocationId = null;
+      this.alternativeLocationRestoreError = '';
     } else {
       this.selectedAlternativeLocationId = null;
       this.selectedFieldLocationId = null;
+      this.alternativeLocationRestoreError = '';
     }
     this.updateMapGeofences();
     this.checkRadius();

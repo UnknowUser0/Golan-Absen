@@ -1,4 +1,5 @@
 import { CheckinComponent } from './checkin.component';
+import { of } from 'rxjs';
 
 describe('CheckinComponent', () => {
   let component: CheckinComponent;
@@ -51,6 +52,83 @@ describe('CheckinComponent', () => {
     (component as any).checkRadius();
     expect(component.isLocationValid).toBeFalse();
     expect(component.locationError).toBe('Posisi Anda berada di luar radius lokasi alternatif.');
+  });
+
+  it('reads and restores the alternative location stored on today\'s attendance', () => {
+    const attendanceService = {
+      getHistory: () => of([{
+        Tanggal: `${(component as any).getAttendanceDateKey(new Date())}T09:00:00+07:00`,
+        JamMasuk: '09:00:00',
+        JamPulang: null,
+        TipeKerja: 'Lokasi Alternatif',
+        alternative_location_id: '22'
+      }]),
+      getDashboardStats: () => of({})
+    };
+    component = new CheckinComponent(attendanceService as any, null as any, null as any, null as any);
+    component.alternativeLocations = [
+      { id: 11, nama_lokasi: 'Lokasi Pertama', status: 'approved', status_aktif: 'active' },
+      { id: 22, nama_lokasi: 'Lokasi Saat Check-in', status: 'approved', status_aktif: 'active' }
+    ];
+    component.locationSelectionLoading = false;
+
+    (component as any).checkTodayAttendance();
+
+    expect(component.todayAlternativeLocationId).toBe(22);
+    expect(component.selectedAlternativeLocationId).toBe(22);
+    expect(component.selectedLocationName()).toBe('Lokasi Saat Check-in');
+  });
+
+  it('waits for both attendance history and locations before restoring the selection', () => {
+    component.hasCheckedIn = true;
+    component.todayRecord = { TipeKerja: 'Lokasi Alternatif', alternative_location_id: 22 };
+    component.todayAlternativeLocationId = 22;
+    (component as any).todayAttendanceLoaded = true;
+    component.tipeKerja = 'Lokasi Alternatif';
+    component.locationSelectionLoading = true;
+
+    (component as any).syncSelectedLocation();
+    expect(component.selectedAlternativeLocationId).toBeNull();
+
+    component.alternativeLocations = [{ id: 11, nama_lokasi: 'Lokasi Pertama' }, { id: 22, nama_lokasi: 'Lokasi Tersimpan' }];
+    component.locationSelectionLoading = false;
+    (component as any).syncSelectedLocation();
+
+    expect(component.selectedAlternativeLocationId).toBe(22);
+    expect(component.selectedLocationName()).toBe('Lokasi Tersimpan');
+  });
+
+  it('does not replace a missing stored alternative location with the first location', () => {
+    component.hasCheckedIn = true;
+    component.todayRecord = { TipeKerja: 'Lokasi Alternatif', alternative_location_id: 99 };
+    component.todayAlternativeLocationId = 99;
+    (component as any).todayAttendanceLoaded = true;
+    component.tipeKerja = 'Lokasi Alternatif';
+    component.alternativeLocations = [{ id: 11, nama_lokasi: 'Lokasi Lain' }];
+    component.locationSelectionLoading = false;
+
+    (component as any).syncSelectedLocation();
+
+    expect(component.selectedAlternativeLocationId).toBeNull();
+    expect(component.alternativeLocationRestoreError).toContain('ID 99');
+    expect(component.alternativeLocationRestoreError).toContain('approved dan aktif');
+  });
+
+  it('keeps field-location restoration independent from alternative-location restoration', () => {
+    component.hasCheckedIn = true;
+    component.todayRecord = { TipeKerja: 'Lokasi Lapangan', alternative_location_id: 99 };
+    component.todayAlternativeLocationId = 99;
+    (component as any).todayAttendanceLoaded = true;
+    component.tipeKerja = 'Lokasi Lapangan';
+    component.workTypes = [{ Nama: 'Lokasi Lapangan', canonical_type: 'field_location', field_location_id: 12 }];
+    component.fieldLocations = [{ id: 12, nama_lokasi: 'Lapangan Aktif', status_aktif: 'active' }];
+    component.locationSelectionLoading = false;
+
+    (component as any).syncSelectedLocation();
+
+    expect(component.selectedFieldLocationId).toBe(12);
+    expect(component.selectedAlternativeLocationId).toBeNull();
+    expect(component.alternativeLocationRestoreError).toBe('');
   });
 
   it('shows the office configuration error before GPS when WFO is not configured', () => {

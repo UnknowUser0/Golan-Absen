@@ -76,17 +76,17 @@
               </div>
             </div>
           </div>
-          <div *ngIf="locationSelectionError" class="alert alert-danger geolocation-warning" role="alert">
-            <span class="warning-icon" aria-hidden="true">!</span><span class="warning-message">{{ locationSelectionError }}</span>
+          <div *ngIf="locationSelectionError || alternativeLocationRestoreError" class="alert alert-danger geolocation-warning" role="alert">
+            <span class="warning-icon" aria-hidden="true">!</span><span class="warning-message">{{ alternativeLocationRestoreError || locationSelectionError }}</span>
           </div>
           <div
             *ngIf="selectedCanonicalType() === 'alternative_location'"
             class="location-selection-panel"
-            [class.is-error]="!locationSelectionLoading && !alternativeLocations.length"
+            [class.is-error]="(!locationSelectionLoading && !alternativeLocations.length) || !!alternativeLocationRestoreError"
             [class.is-disabled]="hasCheckedIn || locationSelectionLoading">
             <label for="alternative-checkin-location">Lokasi Alternatif</label>
             <div class="location-select-control">
-              <select id="alternative-checkin-location" class="form-control location-select" [(ngModel)]="selectedAlternativeLocationId" name="alternative_checkin_location" (ngModelChange)="onAlternativeLocationChange()" [disabled]="hasCheckedIn || locationSelectionLoading" [attr.aria-invalid]="!locationSelectionLoading && !alternativeLocations.length">
+              <select id="alternative-checkin-location" class="form-control location-select" [(ngModel)]="selectedAlternativeLocationId" name="alternative_checkin_location" (ngModelChange)="onAlternativeLocationChange()" [disabled]="hasCheckedIn || locationSelectionLoading" [attr.aria-invalid]="(!locationSelectionLoading && !alternativeLocations.length) || !!alternativeLocationRestoreError">
                 <option [ngValue]="null">Pilih lokasi approved dan aktif</option>
                 <option *ngFor="let location of alternativeLocations" [ngValue]="location.id || location.ID">{{ location.nama_lokasi || location.NamaLokasi }}</option>
               </select>
