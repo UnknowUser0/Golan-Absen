@@ -73,6 +73,9 @@ export class EmployeeListComponent implements OnInit {
   // Detail Modal
   isDetailOpen = false;
   selectedDetail: any = null;
+  isDetailLoading = false;
+  detailError = '';
+  private detailRequestToken = 0;
 
   formData: any = {
     ID: null,
@@ -612,10 +615,48 @@ export class EmployeeListComponent implements OnInit {
   openDetailModal(emp: any): void {
     this.selectedDetail = emp;
     this.isDetailOpen = true;
+    this.isDetailLoading = true;
+    this.detailError = '';
+
+    const employeeID = emp?.ID ?? emp?.User?.ID;
+    if (!employeeID) {
+      this.isDetailLoading = false;
+      this.detailError = 'ID karyawan tidak tersedia.';
+      return;
+    }
+
+    const requestToken = ++this.detailRequestToken;
+    this.http.get<any>(`${this.baseUrl}/${employeeID}`, { headers: this.getHeaders() }).subscribe({
+      next: response => {
+        if (requestToken !== this.detailRequestToken || !this.isDetailOpen) return;
+        // GET /admin/employees/:id returns { user, quotas, home_locations, ... }.
+        // Keep the modal bound to the user object so it has the same shape as
+        // the directory response while still using the complete detail data.
+        const detail = response?.user || response;
+        // HomeLocation is normally preloaded on Employee. Keep the fallback
+        // for the detail payload's home_locations collection as well, so the
+        // modal remains complete if a backend response omits that nested
+        // relation while still returning the same employee-owned location.
+        if (detail?.Employee && !detail.Employee.HomeLocation && Array.isArray(response?.home_locations)) {
+          const homeLocation = response.home_locations.find((location: any) => Number(location?.EmployeeID) === Number(detail.Employee.ID));
+          if (homeLocation) detail.Employee = { ...detail.Employee, HomeLocation: homeLocation };
+        }
+        this.selectedDetail = detail;
+        this.isDetailLoading = false;
+      },
+      error: err => {
+        if (requestToken !== this.detailRequestToken || !this.isDetailOpen) return;
+        this.isDetailLoading = false;
+        this.detailError = err.error?.error || 'Data detail karyawan tidak dapat dimuat.';
+      }
+    });
   }
 
   closeDetailModal(): void {
+    this.detailRequestToken++;
     this.isDetailOpen = false;
+    this.isDetailLoading = false;
+    this.detailError = '';
     this.selectedDetail = null;
   }
 
@@ -631,6 +672,37 @@ export class EmployeeListComponent implements OnInit {
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     return `${day}-${month}-${date.getFullYear()}`;
+  }
+
+  detailText(value: unknown, fallback = 'Belum diisi'): string {
+    if (value === null || value === undefined || String(value).trim() === '') return fallback;
+    return String(value);
+  }
+
+  detailDate(value: string | null | undefined): string {
+    const formatted = this.formatJoinDate(value);
+    return formatted === 'Belum diatur' ? 'Belum diisi' : formatted;
+  }
+
+  detailHomeLocation(detail: any): any {
+    return detail?.Employee?.HomeLocation || null;
+  }
+
+  detailHomeCoordinate(detail: any, field: 'latitude' | 'longitude'): number | string {
+    const location = this.detailHomeLocation(detail);
+    const locationValue = field === 'latitude' ? location?.LatitudeRumah : location?.LongitudeRumah;
+    const employeeValue = field === 'latitude' ? detail?.Employee?.HomeLatitude : detail?.Employee?.HomeLongitude;
+    const value = locationValue ?? employeeValue;
+    return value === null || value === undefined || value === '' ? '-' : value;
+  }
+
+  detailHomeRadius(detail: any): number | string {
+    const value = this.detailHomeLocation(detail)?.RadiusMeter;
+    return value === null || value === undefined || value === '' ? '-' : value;
+  }
+
+  isInternDetail(detail: any): boolean {
+    return this.getRawRole(detail).toUpperCase() === 'MAGANG';
   }
 
   closeModal(): void {

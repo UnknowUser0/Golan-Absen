@@ -803,7 +803,7 @@
 
 .detail-modal {
   display: flex;
-  width: min(100%, 580px);
+  width: min(100%, 680px);
   max-height: min(760px, calc(100vh - 32px));
   flex-direction: column;
   padding: 0 !important;
@@ -973,6 +973,10 @@
   background: #fbfdff;
 }
 
+.detail-item-wide {
+  grid-column: 1 / -1;
+}
+
 .detail-item .detail-label {
   display: block;
   margin-bottom: 6px;
@@ -993,6 +997,28 @@
   color: #365d79;
   font-family: var(--font-mono);
   font-size: 0.8rem;
+}
+
+.detail-link {
+  color: #1769aa;
+  text-decoration: none;
+}
+
+.detail-link:hover,
+.detail-link:focus-visible {
+  color: #0f4f83;
+  text-decoration: underline;
+}
+
+.detail-state {
+  padding: 32px 16px;
+  color: #58758f;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.detail-state-error {
+  color: #b4232d;
 }
 
 @media (max-width: 640px) {
@@ -1138,6 +1164,10 @@
 
   .detail-grid {
     grid-template-columns: 1fr;
+  }
+
+  .detail-item-wide {
+    grid-column: auto;
   }
 
   .employee-modal .modal-header,

@@ -255,69 +255,63 @@
       <button class="btn-close" type="button" aria-label="Tutup detail karyawan" (click)="closeDetailModal()">&times;</button>
     </div>
     <div *ngIf="selectedDetail" class="detail-modal-body">
-      <section class="detail-profile-summary">
-        <div class="detail-avatar">
-          <img *ngIf="selectedDetail.Employee?.FotoProfilURL" [src]="selectedDetail.Employee.FotoProfilURL" [alt]="'Pas foto ' + selectedDetail.Nama" />
-          <span *ngIf="!selectedDetail.Employee?.FotoProfilURL">{{ getEmployeeInitials(selectedDetail.Nama) }}</span>
-        </div>
-        <div class="detail-profile-copy">
-          <span class="detail-profile-label">Profil karyawan</span>
-          <h4>{{ selectedDetail.Nama || 'Nama belum tersedia' }}</h4>
-          <p>{{ selectedDetail.Email || 'Email belum tersedia' }}</p>
-        </div>
-        <span class="detail-status" [class.detail-status-active]="selectedDetail.Status === 'aktif'" [class.detail-status-inactive]="selectedDetail.Status !== 'aktif'">
-          {{ selectedDetail.Status || 'Tidak diketahui' }}
-        </span>
-      </section>
+      <div *ngIf="isDetailLoading" class="detail-state">Memuat data lengkap karyawan...</div>
+      <div *ngIf="detailError" class="detail-state detail-state-error">{{ detailError }}</div>
 
-      <div class="detail-section-title">Informasi akun dan pekerjaan</div>
-      <div class="detail-grid">
-        <div class="detail-item">
-          <span class="detail-label">Kode Karyawan</span>
-          <strong class="detail-value detail-value-mono">{{ selectedDetail.Employee?.employee_code || '-' }}</strong>
-        </div>
-        <div class="detail-item">
-          <span class="detail-label">Role</span>
-          <strong class="detail-value">{{ selectedDetail.Role || '-' }}</strong>
-        </div>
-        <div class="detail-item">
-          <span class="detail-label">NIK</span>
-          <strong class="detail-value detail-value-mono">{{ selectedDetail.Employee?.NIK || '-' }}</strong>
-        </div>
-        <div class="detail-item">
-          <span class="detail-label">Tanggal Masuk</span>
-          <strong class="detail-value">{{ formatJoinDate(selectedDetail.Employee?.TanggalBergabung) }}</strong>
-        </div>
-        <div class="detail-item">
-          <span class="detail-label">Divisi</span>
-          <strong class="detail-value">{{ selectedDetail.Employee?.Division?.NamaDivisi || 'Belum ditentukan' }}</strong>
-        </div>
-        <div class="detail-item">
-          <span class="detail-label">Jabatan</span>
-          <strong class="detail-value">{{ selectedDetail.Employee?.Position?.NamaJabatan || 'Belum ditentukan' }}</strong>
-        </div>
-      </div>
+      <ng-container *ngIf="!isDetailLoading && !detailError">
+        <section class="detail-profile-summary">
+          <div class="detail-avatar">
+            <img *ngIf="selectedDetail.Employee?.FotoProfilURL" [src]="selectedDetail.Employee.FotoProfilURL" [alt]="'Pas foto ' + selectedDetail.Nama" />
+            <span *ngIf="!selectedDetail.Employee?.FotoProfilURL">{{ getEmployeeInitials(selectedDetail.Nama) }}</span>
+          </div>
+          <div class="detail-profile-copy">
+            <span class="detail-profile-label">Profil karyawan</span>
+            <h4>{{ detailText(selectedDetail.Nama, 'Nama belum tersedia') }}</h4>
+            <p>{{ detailText(selectedDetail.Email, 'Email belum tersedia') }}</p>
+          </div>
+          <span class="detail-status" [class.detail-status-active]="selectedDetail.Status === 'aktif'" [class.detail-status-inactive]="selectedDetail.Status !== 'aktif'">
+            {{ detailText(selectedDetail.Status, 'Tidak diketahui') }}
+          </span>
+        </section>
 
-      <ng-container *ngIf="selectedDetail.Role === 'MAGANG'">
-        <div class="detail-section-title" style="margin-top: 1.5rem;">Lampiran Magang</div>
+        <div class="detail-section-title">Data pribadi</div>
         <div class="detail-grid">
-          <div class="detail-item">
-            <span class="detail-label">Institusi Pendidikan</span>
-            <strong class="detail-value">{{ selectedDetail.InstitutionName || '-' }}</strong>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">Nama Manajer</span>
-            <strong class="detail-value">{{ selectedDetail.MentorName || '-' }}</strong>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">Periode Mulai Magang</span>
-            <strong class="detail-value">{{ formatJoinDate(selectedDetail.InternshipStartDate) }}</strong>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">Periode Selesai Magang</span>
-            <strong class="detail-value">{{ formatJoinDate(selectedDetail.InternshipEndDate) }}</strong>
-          </div>
+          <div class="detail-item"><span class="detail-label">NIK</span><strong class="detail-value detail-value-mono">{{ detailText(selectedDetail.Employee?.NIK, '-') }}</strong></div>
+          <div class="detail-item"><span class="detail-label">Jenis Kelamin</span><strong class="detail-value">{{ detailText(selectedDetail.Employee?.JenisKelamin) }}</strong></div>
+          <div class="detail-item"><span class="detail-label">Tempat Lahir</span><strong class="detail-value">{{ detailText(selectedDetail.Employee?.TempatLahir) }}</strong></div>
+          <div class="detail-item"><span class="detail-label">Tanggal Lahir</span><strong class="detail-value">{{ detailDate(selectedDetail.Employee?.TanggalLahir) }}</strong></div>
+          <div class="detail-item"><span class="detail-label">Nomor Telepon</span><strong class="detail-value"><a *ngIf="selectedDetail.Employee?.NomorTelepon" class="detail-link" [href]="'tel:' + selectedDetail.Employee.NomorTelepon">{{ selectedDetail.Employee.NomorTelepon }}</a><span *ngIf="!selectedDetail.Employee?.NomorTelepon">Belum diisi</span></strong></div>
+          <div class="detail-item detail-item-wide"><span class="detail-label">Alamat</span><strong class="detail-value">{{ detailText(selectedDetail.Employee?.Alamat) }}</strong></div>
         </div>
+
+        <div class="detail-section-title">Informasi pekerjaan</div>
+        <div class="detail-grid">
+          <div class="detail-item"><span class="detail-label">Kode Karyawan</span><strong class="detail-value detail-value-mono">{{ detailText(selectedDetail.Employee?.employee_code, '-') }}</strong></div>
+          <div class="detail-item"><span class="detail-label">Role</span><strong class="detail-value">{{ getRoleLabel(selectedDetail) }}</strong></div>
+          <div class="detail-item"><span class="detail-label">Divisi</span><strong class="detail-value">{{ detailText(selectedDetail.Employee?.Division?.NamaDivisi) }}</strong></div>
+          <div class="detail-item"><span class="detail-label">Jabatan</span><strong class="detail-value">{{ detailText(selectedDetail.Employee?.Position?.NamaJabatan) }}</strong></div>
+          <div class="detail-item"><span class="detail-label">Tanggal Masuk</span><strong class="detail-value">{{ detailDate(selectedDetail.Employee?.TanggalBergabung) }}</strong></div>
+          <div class="detail-item"><span class="detail-label">Shift Kerja</span><strong class="detail-value">{{ detailText(getShiftLabel(selectedDetail), '-') }}</strong></div>
+        </div>
+
+        <div class="detail-section-title">Lokasi kerja / WFH</div>
+        <div class="detail-grid">
+          <div class="detail-item detail-item-wide"><span class="detail-label">Alamat Rumah / WFH</span><strong class="detail-value">{{ detailText(detailHomeLocation(selectedDetail)?.AlamatRumah, '-') }}</strong></div>
+          <div class="detail-item detail-item-wide"><span class="detail-label">Link Google Maps</span><strong class="detail-value"><a *ngIf="detailHomeLocation(selectedDetail)?.GoogleMapsURL" class="detail-link" [href]="detailHomeLocation(selectedDetail).GoogleMapsURL" target="_blank" rel="noopener">Buka lokasi</a><span *ngIf="!detailHomeLocation(selectedDetail)?.GoogleMapsURL">-</span></strong></div>
+          <div class="detail-item"><span class="detail-label">Latitude</span><strong class="detail-value detail-value-mono">{{ detailHomeCoordinate(selectedDetail, 'latitude') }}</strong></div>
+          <div class="detail-item"><span class="detail-label">Longitude</span><strong class="detail-value detail-value-mono">{{ detailHomeCoordinate(selectedDetail, 'longitude') }}</strong></div>
+          <div class="detail-item"><span class="detail-label">Radius Geofence</span><strong class="detail-value">{{ detailHomeRadius(selectedDetail) }}<span *ngIf="detailHomeRadius(selectedDetail) !== '-'"> meter</span></strong></div>
+        </div>
+
+        <ng-container *ngIf="isInternDetail(selectedDetail)">
+          <div class="detail-section-title">Data khusus magang</div>
+          <div class="detail-grid">
+            <div class="detail-item"><span class="detail-label">Institusi Pendidikan</span><strong class="detail-value">{{ detailText(selectedDetail.InstitutionName) }}</strong></div>
+            <div class="detail-item"><span class="detail-label">Nama Mentor / Manajer</span><strong class="detail-value">{{ detailText(selectedDetail.MentorName) }}</strong></div>
+            <div class="detail-item"><span class="detail-label">Periode Mulai Magang</span><strong class="detail-value">{{ detailDate(selectedDetail.InternshipStartDate) }}</strong></div>
+            <div class="detail-item"><span class="detail-label">Periode Selesai Magang</span><strong class="detail-value">{{ detailDate(selectedDetail.InternshipEndDate) }}</strong></div>
+          </div>
+        </ng-container>
       </ng-container>
     </div>
   </div>
