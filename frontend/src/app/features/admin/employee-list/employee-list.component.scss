@@ -376,6 +376,27 @@
   white-space: normal;
 }
 
+/* Long addresses must stay inside their own column. The inner value is a
+   flexible block so ordinary spaces and very long unbroken strings both wrap
+   without expanding the whole employee table. */
+.employee-table .employee-address-cell {
+  width: 240px;
+  min-width: 220px;
+  max-width: 320px;
+  vertical-align: top;
+  white-space: normal;
+}
+
+.employee-table .employee-address-cell .employee-cell-value {
+  display: flex;
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.35;
+}
+
 /* Match the approval status badges for the employee status column while
    keeping the change local to this table. */
 .employee-table .status-badge {

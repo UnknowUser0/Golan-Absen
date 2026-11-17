@@ -197,7 +197,7 @@
               <td data-label="Tempat dan tanggal lahir"><span class="employee-cell-value">{{ emp.Employee?.TempatLahir || '-' }}{{ emp.Employee?.TanggalLahir ? ' / ' + (emp.Employee.TanggalLahir | date:'dd-MM-yyyy') : '' }}</span></td>
               <td data-label="Nomor telepon"><span class="employee-cell-value">{{ emp.Employee?.NomorTelepon || '-' }}</span></td>
               <td data-label="Email"><span class="employee-cell-value">{{ emp.Email || '-' }}</span></td>
-              <td data-label="Alamat"><span class="employee-cell-value">{{ emp.Employee?.Alamat || '-' }}</span></td>
+              <td data-label="Alamat" class="employee-address-cell"><span class="employee-cell-value">{{ emp.Employee?.Alamat || '-' }}</span></td>
               <td data-label="Jabatan"><span class="employee-cell-value">{{ emp.Employee?.Position?.NamaJabatan || '-' }}</span></td>
               <td data-label="Departemen"><span class="employee-cell-value">{{ emp.Employee?.Division?.NamaDivisi || '-' }}</span></td>
               <td data-label="Status karyawan">
