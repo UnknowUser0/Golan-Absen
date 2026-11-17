@@ -1,3 +1,17 @@
+.percentage-input {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.percentage-input input {
+  flex: 1;
+}
+
+.percentage-input > span {
+  font-weight: 600;
+}
+
 .dashboard-container.work-report-shell {
   min-height: 0 !important;
   align-items: flex-start;

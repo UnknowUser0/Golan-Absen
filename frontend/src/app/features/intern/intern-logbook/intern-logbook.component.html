@@ -52,8 +52,7 @@
           ></textarea></label>
         <label class="field-group"
           ><span>Realisasi Kegiatan (Capaian Target, %) <em>*</em></span
-          ><input class="golan-input" [(ngModel)]="form.realisasi_kegiatan" name="realisasi_kegiatan" placeholder="Contoh: 100%" inputmode="numeric" maxlength="4" pattern="^(100|[1-9]?\d)%$" required
-        /></label>
+          ><span class="percentage-input"><input class="golan-input" [(ngModel)]="form.realisasi_kegiatan" name="realisasi_kegiatan" placeholder="Contoh: 100" inputmode="numeric" maxlength="4" pattern="^\s*(100|[1-9]?\d)%?\s*$" /><span aria-hidden="true">%</span></span></label>
         <label class="field-group"
           ><span>Kendala (Jika Ada)</span
           ><textarea
@@ -272,7 +271,7 @@
                     "-"
                 }}
               </td>
-              <td data-label="Realisasi">{{ item.realisasi_kegiatan || item.RealisasiKegiatan || '-' }}</td>
+              <td data-label="Realisasi">{{ formatRealisasiKegiatan(item.realisasi_kegiatan ?? item.RealisasiKegiatan) }}</td>
               <td data-label="Kendala" class="text-cell" [title]="item.kendala || item.Kendala || '-'">{{ item.kendala || item.Kendala || '-' }}</td>
               <td data-label="Rencana" class="text-cell" [title]="item.rencana_minggu_depan || item.RencanaMingguDepan || '-'">{{ item.rencana_minggu_depan || item.RencanaMingguDepan || '-' }}</td>
               <td data-label="Link Artikel">
@@ -408,7 +407,7 @@
           }}
         </p>
       </div>
-      <div class="detail-row"><strong>Realisasi Kegiatan:</strong><p>{{ selectedLogbookDetail.realisasi_kegiatan || selectedLogbookDetail.RealisasiKegiatan || '-' }}</p></div>
+      <div class="detail-row"><strong>Realisasi Kegiatan:</strong><p>{{ formatRealisasiKegiatan(selectedLogbookDetail.realisasi_kegiatan ?? selectedLogbookDetail.RealisasiKegiatan) }}</p></div>
       <div class="detail-row">
         <strong>Kendala:</strong>
         <p style="white-space: pre-wrap">

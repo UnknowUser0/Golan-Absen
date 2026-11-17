@@ -22,6 +22,7 @@ import { canonicalWorkReportExportRecord } from '../../../core/utils/work-report
 import { NotificationService } from '../../../core/services/notification.service';
 import { DatePickerComponent } from '../../../shared/date-picker/date-picker.component';
 import { formatWorkReportRevisionDeadline, isWorkReportRevisionWithinDeadline, workReportRevisionDeadline } from './work-report-revision.utils';
+import { formatRealisasiKegiatan, realisasiKegiatanInputValue } from '../../../core/utils/realisasi-kegiatan';
 
 type SavedScrollPosition = { left: number; top: number };
 
@@ -33,6 +34,7 @@ type SavedScrollPosition = { left: number; top: number };
   styleUrls: ['./work-report.component.scss']
 })
 export class WorkReportComponent implements OnDestroy, OnInit {
+  readonly formatRealisasiKegiatan = formatRealisasiKegiatan;
   readonly canonicalWorkReportTitle = canonicalWorkReportTitle;
   viewMode: 'list' | 'form' = 'list';
   isExportOpen = false;
@@ -108,7 +110,7 @@ export class WorkReportComponent implements OnDestroy, OnInit {
       tanggal: ['', Validators.required],
       judul_tugas: ['', Validators.required],
       deskripsi_kegiatan: ['', Validators.required],
-      realisasi_kegiatan: ['', [Validators.required, Validators.pattern(/^(?:100|[1-9]?\d)%$/)]],
+      realisasi_kegiatan: ['', [Validators.required, Validators.pattern(/^\s*(?:100|[1-9]?\d)%?\s*$/)]],
       kendala: [''],
       rencana_minggu_depan: [''],
       link_artikel: [''],
@@ -443,7 +445,7 @@ export class WorkReportComponent implements OnDestroy, OnInit {
       tanggal: dateOnly(r.tanggal),
       judul_tugas: canonicalWorkReportTitle(r),
       deskripsi_kegiatan: r.deskripsi_kegiatan,
-      realisasi_kegiatan: r.realisasi_kegiatan,
+      realisasi_kegiatan: realisasiKegiatanInputValue(r.realisasi_kegiatan),
       kendala: r.kendala,
       rencana_minggu_depan: r.rencana_minggu_depan,
       link_artikel: r.link_artikel,
@@ -766,7 +768,7 @@ export class WorkReportComponent implements OnDestroy, OnInit {
       this.userDivisi || '-',
       canonicalWorkReportTitle(report) || '-',
       report.deskripsi_kegiatan || '-',
-      report.realisasi_kegiatan || '-',
+      formatRealisasiKegiatan(report.realisasi_kegiatan),
       report.kendala || '-',
       report.rencana_minggu_depan || '-',
       report.link_artikel || '-',

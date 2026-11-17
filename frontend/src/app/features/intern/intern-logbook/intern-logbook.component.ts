@@ -18,10 +18,12 @@ import { requiresReportTitle as resolveRequiresReportTitle } from '../../../core
 import { canonicalWorkReportTitle } from '../../../core/utils/work-report-title';
 import { normalizeWorkReportContract, WORK_REPORT_NO_REPORT_LABEL } from '../../../core/utils/work-report-contract';
 import { canonicalWorkReportExportRecord } from '../../../core/utils/work-report-export';
+import { formatRealisasiKegiatan, realisasiKegiatanInputValue, isValidRealisasiKegiatanValue } from '../../../core/utils/realisasi-kegiatan';
 
 @Component({ selector: 'app-intern-logbook', standalone: true, imports: [CommonModule, FormsModule, DatePipe, SharedSidebarComponent, PaginationComponent, FilePreviewComponent, DatePickerComponent], templateUrl: './intern-logbook.component.html', styleUrls: ['./intern-logbook.component.scss'] })
 export class InternLogbookComponent implements OnInit {
   readonly canonicalWorkReportTitle = canonicalWorkReportTitle;
+  readonly formatRealisasiKegiatan = formatRealisasiKegiatan;
   @ViewChild('editLogbookForm') editLogbookForm?: ElementRef<HTMLElement>;
   private editScrollTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -84,12 +86,13 @@ export class InternLogbookComponent implements OnInit {
       this.showSaveError('Logbook untuk tanggal tersebut sudah dibuat. Jika statusnya masih Draft, silakan gunakan tombol Edit pada riwayat logbook.');
       return;
     }
-    if (!this.form.tanggal || !this.form.judul_tugas.trim() || !this.form.deskripsi_kegiatan.trim() || !this.form.realisasi_kegiatan.trim()) {
-      this.showSaveError(this.form.realisasi_kegiatan.trim() ? 'Tanggal, Judul Tugas, dan deskripsi kegiatan wajib diisi.' : 'Realisasi kegiatan harus berupa angka persentase antara 0% sampai 100%, contoh: 20%, 50%, atau 100%.');
+    const isSubmitted = targetStatus === 'submitted';
+    if (!this.form.tanggal || !this.form.judul_tugas.trim() || !this.form.deskripsi_kegiatan.trim() || (isSubmitted && !this.form.realisasi_kegiatan.trim())) {
+      this.showSaveError(isSubmitted && !this.form.realisasi_kegiatan.trim() ? 'Realisasi kegiatan harus berupa angka antara 0 sampai 100, contoh: 20, 50, atau 100.' : 'Tanggal, Judul Tugas, dan deskripsi kegiatan wajib diisi.');
       return;
     }
-    if (!/^(100|[1-9]?\d)%$/.test(this.form.realisasi_kegiatan.trim())) {
-      this.showSaveError('Realisasi kegiatan harus berupa angka persentase antara 0% sampai 100%, contoh: 20%, 50%, atau 100%.');
+    if (this.form.realisasi_kegiatan.trim() && !isValidRealisasiKegiatanValue(this.form.realisasi_kegiatan, false)) {
+      this.showSaveError('Realisasi kegiatan harus berupa angka antara 0 sampai 100, contoh: 20, 50, atau 100.');
       return;
     }
     const missingCustom = this.columns.find(column => column.wajib_diisi && !String(this.form.custom_fields[column.nama_kolom] || '').trim());
@@ -187,7 +190,7 @@ export class InternLogbookComponent implements OnInit {
       tanggal: String(item.tanggal || item.Tanggal || '').slice(0, 10),
       judul_tugas: canonicalWorkReportTitle(item),
       deskripsi_kegiatan: item.deskripsi_kegiatan || item.DeskripsiKegiatan || '',
-      realisasi_kegiatan: item.realisasi_kegiatan || item.RealisasiKegiatan || '',
+      realisasi_kegiatan: realisasiKegiatanInputValue(item.realisasi_kegiatan ?? item.RealisasiKegiatan),
       kendala: item.kendala || item.Kendala || '',
       rencana_minggu_depan: item.rencana_minggu_depan || item.RencanaMingguDepan || '',
       link_artikel: item.link_artikel || item.LinkArtikel || '',
@@ -241,7 +244,7 @@ export class InternLogbookComponent implements OnInit {
       division,
       canonicalWorkReportTitle(item) || '-',
       item.deskripsi_kegiatan || item.DeskripsiKegiatan || item.kegiatan || item.Kegiatan || '-',
-      item.realisasi_kegiatan || item.RealisasiKegiatan || '-',
+      formatRealisasiKegiatan(item.realisasi_kegiatan ?? item.RealisasiKegiatan),
       item.kendala || item.Kendala || '-',
       item.rencana_minggu_depan || item.RencanaMingguDepan || '-',
       item.link_artikel || item.LinkArtikel || '-',

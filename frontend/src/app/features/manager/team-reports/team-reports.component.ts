@@ -13,6 +13,7 @@ import { canonicalWorkReportTitle } from '../../../core/utils/work-report-title'
 import { canonicalWorkReportExportRecord } from '../../../core/utils/work-report-export';
 import { NotificationService } from '../../../core/services/notification.service';
 import { DatePickerComponent } from '../../../shared/date-picker/date-picker.component';
+import { formatRealisasiKegiatan } from '../../../core/utils/realisasi-kegiatan';
 
 @Component({
   selector: 'app-team-reports',
@@ -23,6 +24,7 @@ import { DatePickerComponent } from '../../../shared/date-picker/date-picker.com
 })
 export class TeamReportsComponent implements OnDestroy, OnInit {
   readonly canonicalWorkReportTitle = canonicalWorkReportTitle;
+  readonly formatRealisasiKegiatan = formatRealisasiKegiatan;
   start = '';
   end = '';
   search = '';
@@ -477,7 +479,7 @@ export class TeamReportsComponent implements OnDestroy, OnInit {
       row.Employee?.Position?.NamaJabatan || '-',
       canonicalWorkReportTitle(row) || '-',
       row.deskripsi_kegiatan || row.DeskripsiKegiatan || '-',
-      row.realisasi_kegiatan || row.RealisasiKegiatan || '-',
+      formatRealisasiKegiatan(row.realisasi_kegiatan ?? row.RealisasiKegiatan),
       row.kendala || row.Kendala || '-',
       row.rencana_minggu_depan || row.RencanaMingguDepan || '-',
       row.link_artikel || row.LinkArtikel || '-',

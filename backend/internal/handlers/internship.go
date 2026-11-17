@@ -468,9 +468,18 @@ func CreateInternshipLogbook(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid input"})
 	}
-	if err := validateRealisasiKegiatan(input.RealisasiKegiatan, true); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	status := input.Status
+	if status == "" {
+		status = "draft"
 	}
+	if status != "draft" && status != "submitted" {
+		return c.Status(400).JSON(fiber.Map{"error": "Status logbook harus draft atau submitted"})
+	}
+	normalizedRealisasi, normalizeErr := normalizeRealisasiKegiatan(input.RealisasiKegiatan, status == "submitted")
+	if normalizeErr != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": normalizeErr.Error()})
+	}
+	input.RealisasiKegiatan = normalizedRealisasi
 	date, err := time.ParseInLocation("2006-01-02", input.Tanggal, jakartaLocation)
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Tanggal wajib berformat YYYY-MM-DD"})
@@ -480,13 +489,6 @@ func CreateInternshipLogbook(c *fiber.Ctx) error {
 	}
 	if err := validateWorkReportSubmission(user.Employee.ID, date, attendanceNow()); err != nil {
 		return c.Status(err.Code).JSON(fiber.Map{"error": err.Message})
-	}
-	status := input.Status
-	if status == "" {
-		status = "draft"
-	}
-	if status != "draft" && status != "submitted" {
-		return c.Status(400).JSON(fiber.Map{"error": "Status logbook harus draft atau submitted"})
 	}
 	if err := validateWorkReportCompleteness(input, user.Employee.Division.NamaDivisi, status == "submitted"); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
@@ -561,9 +563,15 @@ func UpdateInternshipLogbook(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid input"})
 	}
-	if err := validateRealisasiKegiatan(input.RealisasiKegiatan, true); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	status := input.Status
+	if status != "draft" && status != "submitted" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Status logbook harus draft atau submitted"})
 	}
+	normalizedRealisasi, normalizeErr := normalizeRealisasiKegiatan(input.RealisasiKegiatan, status == "submitted")
+	if normalizeErr != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": normalizeErr.Error()})
+	}
+	input.RealisasiKegiatan = normalizedRealisasi
 	if err := deleteRequestedWorkReportAttachments(c, report.ID); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -598,10 +606,6 @@ func UpdateInternshipLogbook(c *fiber.Ctx) error {
 		}
 	} else if err := validateWorkReportSubmission(user.Employee.ID, report.Tanggal, attendanceNow()); err != nil {
 		return c.Status(err.Code).JSON(fiber.Map{"error": err.Message})
-	}
-	status := input.Status
-	if status != "draft" && status != "submitted" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Status logbook harus draft atau submitted"})
 	}
 	if err := validateWorkReportCompleteness(input, user.Employee.Division.NamaDivisi, status == "submitted"); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})

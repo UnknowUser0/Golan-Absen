@@ -22,6 +22,7 @@ import { normalizeWorkReportContract, WORK_REPORT_NO_REPORT_LABEL } from '../../
 import { canonicalWorkReportTitle } from '../../../core/utils/work-report-title';
 import { canonicalWorkReportExportRecord } from '../../../core/utils/work-report-export';
 import { DatePickerComponent } from '../../../shared/date-picker/date-picker.component';
+import { formatRealisasiKegiatan } from '../../../core/utils/realisasi-kegiatan';
 
 @Component({
   selector: 'app-work-report-admin',
@@ -32,6 +33,7 @@ import { DatePickerComponent } from '../../../shared/date-picker/date-picker.com
 })
 export class WorkReportAdminComponent implements OnInit, OnDestroy {
   readonly canonicalWorkReportTitle = canonicalWorkReportTitle;
+  readonly formatRealisasiKegiatan = formatRealisasiKegiatan;
   @ViewChild('paginationBar') paginationBar?: ElementRef<HTMLElement>;
 
   reports: WorkReport[] = [];
@@ -677,7 +679,7 @@ export class WorkReportAdminComponent implements OnInit, OnDestroy {
           <td>${jabatan}</td>
           <td style="text-align: left;">${canonicalWorkReportTitle(r).replace(/</g, '&lt;')}</td>
           <td style="text-align: left;">${(r.deskripsi_kegiatan || '').replace(/</g, '&lt;')}</td>
-          <td>${r.realisasi_kegiatan || ''}</td>
+          <td>${formatRealisasiKegiatan(r.realisasi_kegiatan)}</td>
           <td style="text-align: left;">${(r.kendala || '').replace(/</g, '&lt;')}</td>
           <td style="text-align: left;">${(r.rencana_minggu_depan || '').replace(/</g, '&lt;')}</td>
           <td>${r.link_artikel ? `<a href="${r.link_artikel}">${r.link_artikel}</a>` : '-'}</td>
@@ -746,7 +748,7 @@ export class WorkReportAdminComponent implements OnInit, OnDestroy {
         `"${(r.Employee?.Position?.NamaJabatan || '').replace(/"/g, '""')}"`,
         `"${canonicalWorkReportTitle(r).replace(/"/g, '""')}"`,
         `"${(r.deskripsi_kegiatan || '').replace(/"/g, '""')}"`,
-        `"${(r.realisasi_kegiatan || '').replace(/"/g, '""')}"`,
+        `"${formatRealisasiKegiatan(r.realisasi_kegiatan).replace(/"/g, '""')}"`,
         `"${(r.kendala || '').replace(/"/g, '""')}"`,
         `"${(r.rencana_minggu_depan || '').replace(/"/g, '""')}"`,
         `"${this.reportFillingLabel(r).replace(/"/g, '""')}"`,
@@ -821,7 +823,7 @@ export class WorkReportAdminComponent implements OnInit, OnDestroy {
       const customData: Record<string, unknown> = {};
       try { Object.assign(customData, JSON.parse(r.custom_fields || '{}')); } catch { /* laporan tetap dapat diekspor meski custom field rusak */ }
       const customValues = this.columns.map(column => customData[column.ID] ?? '-');
-      return [index + 1, this.formatReportDate(r.tanggal), this.getEmployeeName(r), r.Employee?.Division?.NamaDivisi || '-', r.Employee?.Position?.NamaJabatan || '-', canonicalWorkReportTitle(r) || '-', r.deskripsi_kegiatan || '-', r.realisasi_kegiatan || '-', r.kendala || '-', r.rencana_minggu_depan || '-', r.link_artikel || '-', r.catatan_tambahan || '-', this.reportFillingLabel(r), this.reportStatusLabel(r), this.evidenceExportLabel(r), this.statusTimeLabel(r), this.exportValidationLabel(r), this.managerAdminNote(r), this.rejectionReason(r), ...customValues];
+      return [index + 1, this.formatReportDate(r.tanggal), this.getEmployeeName(r), r.Employee?.Division?.NamaDivisi || '-', r.Employee?.Position?.NamaJabatan || '-', canonicalWorkReportTitle(r) || '-', r.deskripsi_kegiatan || '-', formatRealisasiKegiatan(r.realisasi_kegiatan), r.kendala || '-', r.rencana_minggu_depan || '-', r.link_artikel || '-', r.catatan_tambahan || '-', this.reportFillingLabel(r), this.reportStatusLabel(r), this.evidenceExportLabel(r), this.statusTimeLabel(r), this.exportValidationLabel(r), this.managerAdminNote(r), this.rejectionReason(r), ...customValues];
     });
     return { headers: headers.concat(this.columns.map(column => column.nama_kolom)), rows };
   }

@@ -575,3 +575,16 @@
   .intern-logbook-table td { display: table-cell !important; width: auto; }
   .intern-logbook-table td::before { display: none !important; content: none !important; }
 }
+.percentage-input {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.percentage-input input {
+  flex: 1;
+}
+
+.percentage-input > span {
+  font-weight: 600;
+}

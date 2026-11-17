@@ -1,5 +1,6 @@
 import { normalizeWorkReportContract } from './work-report-contract';
 import { canonicalWorkReportTitle } from './work-report-title';
+import { formatRealisasiKegiatan } from './realisasi-kegiatan';
 
 export interface CanonicalWorkReportExportFields {
   judul_tugas?: string;
@@ -42,6 +43,7 @@ export function canonicalWorkReportExportRecord(row: any, fields: CanonicalWorkR
   return {
     ...rest,
     judul_tugas: fields.judul_tugas ?? canonicalWorkReportTitle(row),
+    realisasi_kegiatan: formatRealisasiKegiatan(row?.realisasi_kegiatan ?? row?.RealisasiKegiatan),
     report_kind: contract.report_kind,
     status: contract.status,
     status_canonical: contract.status,

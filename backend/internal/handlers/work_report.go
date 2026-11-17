@@ -178,10 +178,12 @@ func CreateWorkReport(c *fiber.Ctx) error {
 		statusInput = input.Status
 	}
 	statusLaporan := normalizeWorkReportStatus(statusInput)
-	if err := validateWorkReportCompleteness(input, emp.Division.NamaDivisi, statusLaporan == "submitted"); err != nil {
+	normalizedRealisasi, err := normalizeRealisasiKegiatan(input.RealisasiKegiatan, statusLaporan == "submitted")
+	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
-	if err := validateRealisasiKegiatan(input.RealisasiKegiatan, statusLaporan == "submitted"); err != nil {
+	input.RealisasiKegiatan = normalizedRealisasi
+	if err := validateWorkReportCompleteness(input, emp.Division.NamaDivisi, statusLaporan == "submitted"); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
@@ -434,10 +436,12 @@ func UpdateWorkReport(c *fiber.Ctx) error {
 		}
 	}
 	if userRole != string(models.RoleHRD) {
-		if err := validateWorkReportCompleteness(input, report.Employee.Division.NamaDivisi, statusLaporan == "submitted"); err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		normalizedRealisasi, normalizeErr := normalizeRealisasiKegiatan(input.RealisasiKegiatan, statusLaporan == "submitted")
+		if normalizeErr != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": normalizeErr.Error()})
 		}
-		if err := validateRealisasiKegiatan(input.RealisasiKegiatan, statusLaporan == "submitted"); err != nil {
+		input.RealisasiKegiatan = normalizedRealisasi
+		if err := validateWorkReportCompleteness(input, report.Employee.Division.NamaDivisi, statusLaporan == "submitted"); err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 		}
 		if isWorkReportRevisionState(report) && !isWorkReportRevisionAllowed(report, attendanceNow()) {
@@ -1039,14 +1043,27 @@ const realisasiKegiatanError = "Realisasi kegiatan harus berupa angka persentase
 
 var realisasiKegiatanPattern = regexp.MustCompile(`^(100|[1-9]?\d)%$`)
 
+func normalizeRealisasiKegiatan(value string, required bool) (string, error) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		if required {
+			return "", fmt.Errorf("%s", realisasiKegiatanError)
+		}
+		return "", nil
+	}
+
+	// Accept the historical storage format with a suffix and the mobile-friendly
+	// numeric form, but always return the one canonical representation.
+	numericValue := strings.TrimSuffix(value, "%")
+	if strings.Contains(numericValue, "%") || !realisasiKegiatanPattern.MatchString(numericValue+"%") {
+		return "", fmt.Errorf("%s", realisasiKegiatanError)
+	}
+	return numericValue + "%", nil
+}
+
 func validateRealisasiKegiatan(value string, required bool) error {
-	if value == "" && !required {
-		return nil
-	}
-	if !realisasiKegiatanPattern.MatchString(value) {
-		return fmt.Errorf("%s", realisasiKegiatanError)
-	}
-	return nil
+	_, err := normalizeRealisasiKegiatan(value, required)
+	return err
 }
 
 func requiresWorkReportTitle(division string) bool {

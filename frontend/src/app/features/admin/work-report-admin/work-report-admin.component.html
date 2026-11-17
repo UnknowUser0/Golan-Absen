@@ -198,7 +198,7 @@
                 <td>{{ r.Employee?.Position?.NamaJabatan || '-' }}</td>
                 <td class="text-cell title-cell" [title]="canonicalWorkReportTitle(r) || '-'">{{ canonicalWorkReportTitle(r) || '-' }}</td>
                 <td class="text-cell description-cell" [title]="r.deskripsi_kegiatan || '-'">{{ r.deskripsi_kegiatan || '-' }}</td>
-                <td>{{ r.realisasi_kegiatan || '-' }}</td>
+                <td>{{ formatRealisasiKegiatan(r.realisasi_kegiatan) }}</td>
                 <td class="text-cell" [title]="r.kendala || '-'">{{ r.kendala || '-' }}</td>
                 <td class="text-cell" [title]="r.rencana_minggu_depan || '-'">{{ r.rencana_minggu_depan || '-' }}</td>
                 <td>
@@ -308,7 +308,7 @@
           <dl class="admin-report-detail-grid">
             <div><dt>Judul Tugas</dt><dd>{{ canonicalWorkReportTitle(detail) || '-' }}</dd></div>
             <div class="wide"><dt>Deskripsi Kegiatan</dt><dd>{{ detail.deskripsi_kegiatan || '-' }}</dd></div>
-            <div><dt>Realisasi Kegiatan</dt><dd>{{ detail.realisasi_kegiatan || '-' }}</dd></div>
+            <div><dt>Realisasi Kegiatan</dt><dd>{{ formatRealisasiKegiatan(detail.realisasi_kegiatan) }}</dd></div>
             <div><dt>Status Waktu</dt><dd>{{ statusTimeLabel(detail) }}</dd></div>
             <div><dt>Kendala</dt><dd>{{ detail.kendala || '-' }}</dd></div>
             <div><dt>Rencana Minggu Depan</dt><dd>{{ detail.rencana_minggu_depan || '-' }}</dd></div>
